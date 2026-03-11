@@ -3,92 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Balkan Hitster - Blind App</title>
+    <title>Balkan Hitster - YouTube Edition</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { background: #121212; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 10px; overflow-x: hidden; }
-        #reader { width: 100%; max-width: 350px; margin: auto; border-radius: 15px; overflow: hidden; border: 2px solid #1DB954; }
+        body { background: #121212; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 10px; }
+        #reader { width: 100%; max-width: 350px; margin: auto; border-radius: 15px; overflow: hidden; border: 2px solid #FF0000; }
         
-        /* KONTEJNER ZA PLAYER - Ovdje radimo magiju */
-        #player-wrapper { 
-            margin-top: 30px; 
-            width: 150px; /* Jako usko */
-            height: 150px; /* Kvadrat */
+        /* Potpuno sakrivamo video, ostavljamo samo kontrolnu traku ako treba */
+        #player-container { 
+            margin-top: 20px; 
+            width: 300px; 
+            height: 60px; /* Jako nisko, samo za kontrole */
             overflow: hidden; 
             position: relative; 
             margin-left: auto; 
-            margin-right: auto; 
-            border-radius: 50%; /* Play gumb će izgledati kao krug */
-            border: 4px solid #1DB954;
+            margin-right: auto;
             display: none;
-            background: #282828;
+            background: #000;
+            border-radius: 30px;
         }
 
-        /* POVEĆAVAMO PLAYER DA SAKRIJEMO TEKST */
-        #spotify-player { 
-            position: absolute; 
-            width: 600px; /* Ogroman player */
-            height: 600px; 
-            top: -245px; /* Guramo ga gore da centriramo Play dugme */
-            left: -15px; /* Guramo ga lijevo */
-            z-index: 1;
+        #yt-player {
+            position: absolute;
+            top: -50px; /* Guramo video gore van vidokruga */
+            left: 0;
+            width: 100%;
+            height: 200px;
         }
 
-        /* MASKA KOJA OSIGURAVA DA SE NIŠTA NE VIDI PRI UČITAVANJU */
-        #safety-overlay {
+        /* Maska preko svega */
+        #blind-mask {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: #282828;
+            background: #121212;
             z-index: 10;
             display: flex;
             align-items: center;
             justify-content: center;
-            pointer-events: none; /* Dozvoljava klik kroz masku na Play dugme */
+            cursor: pointer;
+            border: 2px solid #FF0000;
+            border-radius: 30px;
         }
 
-        .status { color: #1DB954; margin: 10px; font-weight: bold; }
-        .instruction { font-size: 14px; color: #888; margin-bottom: 10px; }
+        .status { color: #FF0000; margin: 10px; font-weight: bold; }
+        .btn { background: #FF0000; color: white; border: none; padding: 15px 30px; border-radius: 30px; margin-top: 10px; font-weight: bold; cursor: pointer;}
     </style>
 </head>
 <body>
 
-    <h2 style="color:#1DB954">BALKAN HITSTER</h2>
+    <h2 style="color:#FF0000">BALKAN HITSTER <br><small style="color:white; font-size: 12px;">YouTube Mode</small></h2>
+    
     <div id="reader"></div>
     <div id="status" class="status">Skeniraj kartu...</div>
 
     <div id="player-area" style="display:none;">
-        <p class="instruction">Klikni u krug za PLAY:</p>
-        <div id="player-wrapper">
-            <div id="safety-overlay" id="overlay">🎵</div>
-            <iframe id="spotify-player" src="" frameborder="0" allow="autoplay; encrypted-media;"></iframe>
+        <div id="player-container">
+            <div id="blind-mask" onclick="revealInfo()">
+                <span id="mask-text">▶ PUSTI / SAKRIJ</span>
+            </div>
+            <iframe id="yt-player" src="" frameborder="0" allow="autoplay"></iframe>
         </div>
+        <p id="song-info" style="display:none; margin-top: 10px; font-size: 14px; color: #aaa;"></p>
     </div>
 
     <script>
-        const player = document.getElementById('spotify-player');
+        const player = document.getElementById('yt-player');
         const playerArea = document.getElementById('player-area');
-        const wrapper = document.getElementById('player-wrapper');
+        const container = document.getElementById('player-container');
         const statusDiv = document.getElementById('status');
+        const songInfo = document.getElementById('song-info');
+        const maskText = document.getElementById('mask-text');
 
         function onScanSuccess(decodedText) {
-            let trackId = "";
-            if (decodedText.includes("?id=")) trackId = decodedText.split("?id=")[1].split("&")[0];
-            else if (decodedText.includes("track/")) trackId = decodedText.split("track/")[1].split("?")[0];
-            else trackId = decodedText.trim();
+            // DecodedText je sada npr. "Zabranjeno Pusenje - Zenica Blues"
+            statusDiv.innerText = "Tražim pjesmu...";
+            playerArea.style.display = "block";
+            container.style.display = "block";
+            songInfo.innerText = "Pjesma: " + decodedText;
+            songInfo.style.display = "none";
+            maskText.innerText = "▶ PUSTI PJESMU";
 
-            if (trackId.length > 5) {
-                statusDiv.innerText = "PJESMA UČITANA!";
-                playerArea.style.display = "block";
-                wrapper.style.display = "block";
-                
-                // Učitavamo player
-                player.src = `https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0`;
+            // YouTube Search Hack: listType=search i list=QUERY
+            // Koristimo youtube-nocookie da izbjegnemo neke redirecte
+            const query = encodeURIComponent(decodedText + " audio");
+            player.src = `https://www.youtube-nocookie.com/embed?listType=search&list=${query}&autoplay=1`;
 
-                html5QrcodeScanner.pause();
-                setTimeout(() => { 
-                    html5QrcodeScanner.resume(); 
-                    statusDiv.innerText = "Spreman za novi sken!";
-                }, 10000);
+            html5QrcodeScanner.pause();
+            setTimeout(() => { 
+                html5QrcodeScanner.resume(); 
+                statusDiv.innerText = "Spreman za novi sken!";
+            }, 10000);
+        }
+
+        function revealInfo() {
+            if (songInfo.style.display === "none") {
+                songInfo.style.display = "block";
+                maskText.innerText = "SAD VIDIŠ :)";
+            } else {
+                songInfo.style.display = "none";
+                maskText.innerText = "▶ PUSTI / SAKRIJ";
             }
         }
 
