@@ -3,35 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Balkan Hitster - YT Fix</title>
+    <title>Balkan HitMaster Party Game</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { background: #121212; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 10px; }
-        #reader { width: 100%; max-width: 350px; margin: auto; border-radius: 20px; overflow: hidden; border: 3px solid #FF0000; }
-        .status { color: #FF0000; margin: 15px; font-weight: bold; font-size: 16px; }
-        
-        /* Skriveni kontejner za YouTube */
-        #yt-hidden { width: 1px; height: 1px; opacity: 0; position: absolute; }
-        
-        .action-btn { 
-            background: #FF0000; border: none; padding: 20px 40px; color: white; 
-            border-radius: 50px; font-weight: bold; font-size: 18px; cursor: pointer; 
-            margin-top: 20px; display: none; width: 80%;
+        :root {
+            --primary: #ff4d4d;
+            --bg: #0a0a0b;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --text: #ffffff;
         }
-        #stop-btn { background: #444; margin-top: 15px; }
+
+        body {
+            background-color: var(--bg);
+            background-image: radial-gradient(circle at 50% 50%, #1a1a1c 0%, #0a0a0b 100%);
+            color: var(--text);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .header {
+            margin-top: 20px;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin: 0;
+            background: linear-gradient(to right, #ff4d4d, #ff9494);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            font-size: 12px;
+            letter-spacing: 5px;
+            opacity: 0.5;
+            margin-top: 5px;
+            text-transform: uppercase;
+        }
+
+        #reader {
+            width: 100%;
+            max-width: 340px;
+            border-radius: 24px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            background: #000;
+        }
+
+        /* Uljepšavanje HTML5-QRCode sučelja */
+        #reader__dashboard { padding: 10px !important; }
+        #reader video { border-radius: 15px; }
+
+        .status-box {
+            margin: 25px 0;
+            min-height: 20px;
+        }
+
+        #status {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-container {
+            width: 100%;
+            max-width: 340px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #play-btn {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 8px 20px rgba(255, 77, 77, 0.3);
+        }
+
+        #stop-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .action-btn:active {
+            transform: scale(0.96);
+        }
+
+        #yt-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Pulsirajuća animacija za skener */
+        .scanning {
+            position: relative;
+        }
+        .scanning::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 24px;
+            box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(255, 77, 77, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0); }
+        }
     </style>
 </head>
 <body>
 
-    <h2 style="color:#FF0000">BALKAN <span style="color:white">HITSTER</span></h2>
+    <div class="header">
+        <h1>Balkan HitMaster</h1>
+        <p>Party Game</p>
+    </div>
     
-    <div id="reader"></div>
-    <div id="status" class="status">SKENIRAJ KARTICU</div>
+    <div id="reader-container" class="scanning">
+        <div id="reader"></div>
+    </div>
+
+    <div class="status-box">
+        <div id="status">Spreman za skeniranje</div>
+    </div>
 
     <div id="yt-hidden"></div>
 
-    <button id="play-btn" class="action-btn">▶ PUSTI MUZIKU</button>
-    <button id="stop-btn" class="action-btn">❌ STOP / SLEDEĆA</button>
+    <div class="btn-container">
+        <button id="play-btn" class="action-btn" onclick="startPlayback()">▶ Pusti muziku</button>
+        <button id="stop-btn" class="action-btn" onclick="stopMusic()">✕ Zaustavi / Sljedeća</button>
+    </div>
 
     <script>
         let currentId = "";
@@ -39,38 +173,53 @@
         const playBtn = document.getElementById('play-btn');
         const stopBtn = document.getElementById('stop-btn');
         const ytContainer = document.getElementById('yt-hidden');
+        const readerCont = document.getElementById('reader-container');
 
         function onScanSuccess(decodedText) {
-            // Uzimamo samo ID (ako je skeniran pun link, čistimo ga)
             currentId = decodedText.trim();
+            // Podrška za razne formate linkova ako zalutaju
             if(currentId.includes("id=")) currentId = currentId.split("id=")[1];
-
-            statusDiv.innerText = "PESMA PRONAĐENA!";
-            playBtn.style.display = "inline-block"; // Pokazujemo dugme za play
+            if(currentId.includes("v=")) currentId = currentId.split("v=")[1].substring(0,11);
             
-            html5QrcodeScanner.pause(); // Pauziramo kameru
+            if(currentId.length >= 11) {
+                statusDiv.innerText = "Pjesma spremna!";
+                playBtn.style.display = "block";
+                readerCont.classList.remove('scanning');
+                html5QrcodeScanner.pause();
+                
+                // Kratka vibracija ako telefon podržava
+                if (navigator.vibrate) navigator.vibrate(100);
+            }
         }
 
-        // KLJUČNI DEO: Korisnik mora kliknuti da bi browser dozvolio zvuk
-        playBtn.addEventListener('click', function() {
+        function startPlayback() {
+            // Generiranje novog iframe-a s parametrima za mobilne uređaje
             ytContainer.innerHTML = `
-                <iframe width="100" height="100" 
-                src="https://www.youtube.com/embed/${currentId}?autoplay=1" 
+                <iframe id="yt-frame" width="100" height="100" 
+                src="https://www.youtube.com/embed/${currentId}?autoplay=1&enablejsapi=1&rel=0" 
                 allow="autoplay; encrypted-media"></iframe>`;
             
-            statusDiv.innerText = "MUZIKA SVIRA...";
+            statusDiv.innerText = "Muzika svira...";
             playBtn.style.display = "none";
-            stopBtn.style.display = "inline-block";
-        });
-
-        function stopMusic() {
-            ytContainer.innerHTML = ""; // Brišemo player
-            stopBtn.style.display = "none";
-            statusDiv.innerText = "SKENIRAJ NOVU KARTU";
-            html5QrcodeScanner.resume(); // Ponovo palimo kameru
+            stopBtn.style.display = "block";
         }
 
-        let html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+        function stopMusic() {
+            // Ključno: Potpuno brisanje sadržaja kontejnera zaustavlja svaki audio proces
+            ytContainer.innerHTML = ""; 
+            
+            stopBtn.style.display = "none";
+            statusDiv.innerText = "Skeniraj novu kartu";
+            readerCont.classList.add('scanning');
+            
+            html5QrcodeScanner.resume();
+        }
+
+        let html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
+            fps: 15, 
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0 
+        });
         html5QrcodeScanner.render(onScanSuccess);
     </script>
 </body>
