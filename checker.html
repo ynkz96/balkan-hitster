@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HitMaster Checker</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        body { background: #0a0a0b; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; }
+        #reader { width: 100%; max-width: 400px; margin: 0 auto; border-radius: 15px; overflow: hidden; border: 2px solid #ff4d4d; }
+        #result-box { margin-top: 20px; padding: 20px; border-radius: 15px; background: #1a1a1c; display: none; }
+        .artist { color: #ff4d4d; font-size: 28px; font-weight: bold; display: block; }
+        .song { font-size: 22px; opacity: 0.9; }
+        .btn { background: #ff4d4d; color: white; border: none; padding: 15px 30px; border-radius: 50px; font-size: 18px; margin-top: 20px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <h2>🔍 HitMaster Checker</h2>
+    <p style="opacity: 0.6;">Skeniraj QR da vidiš koja je karta</p>
+
+    <div id="reader"></div>
+
+    <div id="result-box">
+        <span class="artist" id="res-artist"></span>
+        <span class="song" id="res-song"></span>
+        <button class="btn" onclick="resetScanner()">SKENIRAJ IDUĆU</button>
+    </div>
+
+    <script>
+        let songDatabase = {};
+        let html5QrCode;
+
+        // 1. Učitaj CSV bazu odmah
+        Papa.parse("lista.csv", {
+            download: true,
+            header: true,
+            complete: function(results) {
+                results.data.forEach(row => {
+                    // Mapiramo Video ID -> Podaci o pjesmi
+                    let id = row["Video ID"] ? row["Video ID"].trim() : "";
+                    if(id) {
+                        songDatabase[id] = {
+                            artist: row["Izvođač"],
+                            song: row["Pjesma"]
+                        };
+                    }
+                });
+                console.log("Baza učitana!");
+                startScanner();
+            }
+        });
+
+        function startScanner() {
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 15, qrbox: 250 },
+                onScanSuccess
+            );
+        }
+
+        function onScanSuccess(decodedText) {
+            let videoId = decodedText.trim();
+            // Ekstrakcija ID-a ako je puni YouTube link
+            if(videoId.includes("v=")) videoId = videoId.split("v=")[1].substring(0, 11);
+            else if(videoId.includes("be/")) videoId = videoId.split("be/")[1].substring(0, 11);
+
+            let match = songDatabase[videoId];
+
+            if(match) {
+                document.getElementById('res-artist').innerText = match.artist;
+                document.getElementById('res-song').innerText = match.song;
+                document.getElementById('result-box').style.display = "block";
+                document.getElementById('reader').style.display = "none";
+                html5QrCode.stop();
+                if (navigator.vibrate) navigator.vibrate(200);
+            } else {
+                alert("Pjesma nije pronađena u CSV-u! ID: " + videoId);
+            }
+        }
+
+        function resetScanner() {
+            document.getElementById('result-box').style.display = "none";
+            document.getElementById('reader').style.display = "block";
+            startScanner();
+        }
+    </script>
+</body>
+</html>
