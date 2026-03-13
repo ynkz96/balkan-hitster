@@ -218,9 +218,14 @@
         let html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
             fps: 15, 
             qrbox: { width: 250, height: 250 },
-            aspectRatio: 1.0 
+            aspectRatio: 1.0,
+            rememberLastUsedCamera: true // Pomaže Brave-u da zapamti dozvolu
         });
-        html5QrcodeScanner.render(onScanSuccess);
+        
+        // Pokretanje skenera sa hvatanjem grešaka (da Brave ne blokira odmah)
+        html5QrcodeScanner.render(onScanSuccess, (errorMessage) => {
+            // Ovdje ne radimo ništa, samo dopuštamo skeneru da pokuša ponovo
+        });
     </script>
 </body>
 </html>
