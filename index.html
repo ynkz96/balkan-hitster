@@ -251,6 +251,9 @@ let html5QrCode; // Koristimo čistu verziju bez UI-a
         function goToScanner() {
             initScanner();
         }
+        if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
     </script>
 </body>
 </html>
