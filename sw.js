@@ -1,7 +1,7 @@
 self.addEventListener('install', (e) => {
-  console.log('Service Worker Installed');
+  console.log('HitMaster SW installed');
 });
 
 self.addEventListener('fetch', (e) => {
-  // Ovo omogućava da aplikacija radi stabilnije
+  // Prazan fetch omogućava rad u standalone modu
 });
