@@ -4,15 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Balkan HitMaster Party Game</title>
-    
-    <link rel="manifest" href="manifest.json">
+
+    <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#ff4d4d">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="display" content="standalone">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/175/175314.png">
 
     <script src="https://unpkg.com/html5-qrcode"></script>
-    
     <style>
         :root {
             --primary: #ff4d4d;
@@ -21,7 +22,7 @@
             --text: #ffffff;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
 
         body {
             background-color: var(--bg);
@@ -47,7 +48,7 @@
             justify-content: center;
             padding: 30px;
             text-align: center;
-            animation: fadeIn 0.4s ease;
+            animation: fadeIn 0.5s ease;
         }
 
         .active { display: flex; }
@@ -68,6 +69,7 @@
         /* --- MENU PAGE --- */
         .logo-area h1 { font-size: 34px; font-weight: 900; letter-spacing: -1px; margin: 0; text-transform: uppercase; }
         .logo-accent { color: var(--primary); }
+        
         .disclaimer {
             position: absolute;
             bottom: 30px;
@@ -79,10 +81,14 @@
 
         /* --- SCANNER PAGE --- */
         #reader { 
-            width: 100%; max-width: 320px; 
-            border-radius: 24px; overflow: hidden; 
+            width: 100%; 
+            max-width: 320px; 
+            aspect-ratio: 1 / 1;
+            border-radius: 24px; 
+            overflow: hidden; 
             border: 2px solid var(--glass);
             background: #000;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
         }
 
         /* --- PLAYER PAGE (VINYL) --- */
@@ -97,7 +103,9 @@
             box-shadow: 0 20px 50px rgba(0,0,0,0.8);
             background: repeating-radial-gradient(#111, #111 2px, #181818 3px, #111 4px);
         }
+
         .vinyl-playing { animation: spin 3s linear infinite; }
+
         .vinyl-label {
             width: 90px; height: 90px;
             background: var(--primary);
@@ -107,6 +115,7 @@
             align-items: center;
             justify-content: center;
         }
+
         .vinyl-center { width: 10px; height: 10px; background: #000; border-radius: 50%; }
 
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -124,8 +133,10 @@
             letter-spacing: 2px;
             cursor: pointer;
             box-shadow: 0 10px 25px rgba(255, 77, 77, 0.4);
+            transition: 0.3s;
             margin-top: 35px;
         }
+        .btn:active { transform: scale(0.92); }
         .btn-secondary { background: var(--glass); box-shadow: none; border: 1px solid rgba(255,255,255,0.1); margin-top: 20px; }
 
         #yt-hidden { position: absolute; left: -9999px; }
@@ -144,6 +155,7 @@
             <p style="opacity: 0.5; margin-top: 8px; letter-spacing: 5px; font-size: 11px;">PARTY GAME</p>
         </div>
         <button class="btn" onclick="initScanner()">Hajde da ludujemo</button>
+        
         <div class="disclaimer">
             Aplikacija samo olakšava pretragu javno dostupnog sadržaja na YouTube/Spotify platformama. Autor ne posjeduje prava na muziku. App je otvorenog koda i dostupan free na GitHub-u.
         </div>
@@ -152,14 +164,17 @@
     <div id="scanner-page" class="page">
         <p style="margin-bottom: 25px; font-weight: 800; color: var(--primary); letter-spacing: 2px;">SKENIRAJ KARTU</p>
         <div id="reader"></div>
-        <button class="btn btn-secondary" onclick="stopScannerAndBack()">Odustani</button>
+        <div id="status" style="margin-top: 15px; font-size: 12px; opacity: 0.5;">Tražim kartu...</div>
+        <button class="btn btn-secondary" onclick="stopScanner()">Odustani</button>
     </div>
 
     <div id="player-page" class="page">
         <div id="vinyl" class="vinyl-container">
-            <div class="vinyl-label"><div class="vinyl-center"></div></div>
+            <div class="vinyl-label">
+                <div class="vinyl-center"></div>
+            </div>
         </div>
-        <p id="player-status" style="margin-top: 35px; opacity: 0.6; letter-spacing: 2px; font-size: 14px;">PRIPREMA...</p>
+        <p id="player-status" style="margin-top: 35px; opacity: 0.6; letter-spacing: 2px; font-size: 14px;">SPREMAN ZA PARTY</p>
         <button class="btn" id="play-btn" onclick="startPlayback()">▶ Pusti muziku</button>
         <button class="btn" id="next-btn" style="display:none;" onclick="nextCard()">✕ Iduća karta</button>
     </div>
@@ -170,11 +185,14 @@
         let currentId = "";
         let html5QrCode;
 
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(err => console.log(err));
+        }
+
         window.addEventListener('load', () => {
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('sw.js');
-            }
-            setTimeout(() => { showPage('menu-page'); }, 2500);
+            setTimeout(() => {
+                showPage('menu-page');
+            }, 2500);
         });
 
         function showPage(pageId) {
@@ -186,9 +204,14 @@
             showPage('scanner-page');
             html5QrCode = new Html5Qrcode("reader");
             const config = { fps: 20, qrbox: { width: 250, height: 250 } };
-            
-            html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
-                .catch(err => { console.error("Kamera error:", err); });
+
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                config, 
+                onScanSuccess
+            ).catch(err => {
+                document.getElementById('status').innerText = "Kamera nije dostupna.";
+            });
         }
 
         function onScanSuccess(decodedText) {
@@ -201,21 +224,26 @@
                     document.getElementById('play-btn').style.display = "block";
                     document.getElementById('next-btn').style.display = "none";
                     document.getElementById('player-status').innerText = "KARTA OČITANA";
+                    document.getElementById('vinyl').classList.remove('vinyl-playing');
                     if (navigator.vibrate) navigator.vibrate(100);
                 });
             }
         }
 
-        function stopScannerAndBack() {
-            if(html5QrCode) {
-                html5QrCode.stop().then(() => { showPage('menu-page'); });
+        function stopScanner() {
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => showPage('menu-page'));
             } else {
                 showPage('menu-page');
             }
         }
 
         function startPlayback() {
-            document.getElementById('yt-hidden').innerHTML = `<iframe width="100" height="100" src="https://www.youtube.com/embed/${currentId}?autoplay=1" allow="autoplay"></iframe>`;
+            document.getElementById('yt-hidden').innerHTML = `
+                <iframe width="100" height="100" 
+                src="https://www.youtube.com/embed/${currentId}?autoplay=1" 
+                allow="autoplay"></iframe>`;
+            
             document.getElementById('play-btn').style.display = "none";
             document.getElementById('next-btn').style.display = "block";
             document.getElementById('player-status').innerText = "MUZIKA SVIRA...";
